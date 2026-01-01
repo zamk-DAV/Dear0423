@@ -15,7 +15,7 @@ export interface FeedItem {
 // 1. 최신 피드 글 가져오기
 export const getRecentFeeds = async (limit = 5): Promise<FeedItem[]> => {
   try {
-    const response = await notion.databases.query({
+    const response = await (notion.databases as any).query({
       database_id: DATABASE_ID,
       page_size: limit,
       sorts: [
