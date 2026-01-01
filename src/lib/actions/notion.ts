@@ -1,6 +1,7 @@
 'use server';
 
-import { notion, DATABASE_ID } from '@/lib/notion';
+import { createNotionClient } from '@/lib/notion';
+import { createClient } from '@/lib/supabase/server'; 
 
 export interface FeedItem {
   id: string;
@@ -9,29 +10,62 @@ export interface FeedItem {
   imageUrl?: string;
   date: string;
   writer: string;
-  likes: number; // 노션 체크박스 여부 (true=1, false=0)
+  likes: number;
+}
+
+// 헬퍼: 현재 유저의 커플 노션 정보 가져오기
+async function getCoupleNotionInfo() {
+  const supabase = await createClient();
+  
+  // 1. 유저 확인
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('로그인이 필요합니다.');
+
+  // 2. 프로필 -> 커플 ID 확인
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('couple_id')
+    .eq('id', user.id)
+    .single();
+  
+  if (!profile?.couple_id) throw new Error('커플 연결이 필요합니다.');
+
+  // 3. 커플 테이블 -> 노션 키 확인
+  const { data: couple } = await supabase
+    .from('couples')
+    .select('notion_api_key, notion_database_id')
+    .eq('id', profile.couple_id)
+    .single();
+
+  if (!couple?.notion_api_key || !couple?.notion_database_id) {
+    throw new Error('Notion 연결 정보가 없습니다.');
+  }
+
+  return {
+    client: createNotionClient(couple.notion_api_key),
+    dbId: couple.notion_database_id
+  };
 }
 
 // 1. 최신 피드 글 가져오기
 export const getRecentFeeds = async (limit = 5): Promise<FeedItem[]> => {
   try {
-    const response = await (notion.databases as any).query({
-      database_id: DATABASE_ID,
+    const { client, dbId } = await getCoupleNotionInfo();
+
+    const response = await (client.databases as any).query({
+      database_id: dbId,
       page_size: limit,
       sorts: [
         {
-          property: 'dear23_작성날짜', // 날짜 기준 내림차순
+          property: 'dear23_작성날짜',
           direction: 'descending',
         },
       ],
-      // 필터: 피드 타입만 가져오기 (Type 속성이 있다면)
-      // filter: { property: 'Type', select: { equals: 'Feed' } } 
     });
 
     return response.results.map((page: any) => {
       const props = page.properties;
       
-      // 이미지 URL 추출 (Files & Media 속성)
       let imageUrl = '';
       if (props.dear23_대표이미지?.files?.length > 0) {
         imageUrl = props.dear23_대표이미지.files[0].file?.url || props.dear23_대표이미지.files[0].external?.url;
@@ -43,7 +77,7 @@ export const getRecentFeeds = async (limit = 5): Promise<FeedItem[]> => {
         preview: props.dear23_내용미리보기?.rich_text[0]?.plain_text || '',
         imageUrl,
         date: props.dear23_작성날짜?.date?.start || new Date().toISOString(),
-        writer: 'Partner', // 작성자 구분 로직은 추후 고도화
+        writer: 'Partner', 
         likes: props.dear23_좋아요?.checkbox ? 1 : 0,
       };
     });
@@ -53,9 +87,10 @@ export const getRecentFeeds = async (limit = 5): Promise<FeedItem[]> => {
   }
 };
 
-// 2. 새 글 작성하기 (피드/일기)
+// 2. 새 글 작성하기
 export const createFeed = async (content: string, imageUrl?: string) => {
   try {
+    const { client, dbId } = await getCoupleNotionInfo();
     const title = content.length > 20 ? content.slice(0, 20) + '...' : content;
 
     const properties: any = {
@@ -68,11 +103,8 @@ export const createFeed = async (content: string, imageUrl?: string) => {
       'dear23_작성날짜': {
         date: { start: new Date().toISOString() },
       },
-      // Type 속성은 노션 DB에 미리 만들어둬야 함
-      // 'Type': { select: { name: 'Feed' } }, 
     };
 
-    // 이미지가 있다면 속성에 추가
     if (imageUrl) {
       properties['dear23_대표이미지'] = {
         files: [
@@ -85,8 +117,8 @@ export const createFeed = async (content: string, imageUrl?: string) => {
       };
     }
 
-    await notion.pages.create({
-      parent: { database_id: DATABASE_ID },
+    await client.pages.create({
+      parent: { database_id: dbId },
       properties: properties,
     });
 

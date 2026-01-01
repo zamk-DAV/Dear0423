@@ -1,8 +1,8 @@
 import { supabase } from '@/lib/supabase';
 import { nanoid } from 'nanoid';
 
-// 초대 코드 생성 (난수 6자리)
-export const createInvitation = async (userId: string) => {
+// 초대 코드 생성 (난수 6자리) + Notion 정보 임시 저장
+export const createInvitation = async (userId: string, notionApiKey: string, notionDatabaseId: string) => {
   const code = nanoid(6).toUpperCase(); // 예: 'X7K9P2'
   
   const { data, error } = await supabase
@@ -10,6 +10,8 @@ export const createInvitation = async (userId: string) => {
     .insert({
       code,
       sender_id: userId,
+      notion_api_key: notionApiKey,
+      notion_database_id: notionDatabaseId,
       // 10분 뒤 만료
       expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString()
     })
@@ -33,11 +35,13 @@ export const joinCouple = async (userId: string, code: string) => {
   if (inviteError || !invite) throw new Error('유효하지 않거나 만료된 코드입니다.');
   if (invite.sender_id === userId) throw new Error('자신의 코드는 입력할 수 없습니다.');
 
-  // 2. 새 커플 행 생성
+  // 2. 새 커플 행 생성 (초대장에 있던 노션 정보 이관)
   const { data: newCouple, error: coupleError } = await supabase
     .from('couples')
     .insert({
       d_day: new Date().toISOString(), // 오늘부터 1일
+      notion_api_key: invite.notion_api_key,
+      notion_database_id: invite.notion_database_id
     })
     .select()
     .single();

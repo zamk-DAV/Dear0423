@@ -53,8 +53,7 @@ export async function updateSession(request: NextRequest) {
     }
 
     // 2-2. 커플 연결 여부 확인 (DB 조회)
-    // 성능 최적화: 쿠키나 메타데이터에 couple_id가 있다면 DB 조회 스킵 가능하지만,
-    // 확실한 정합성을 위해 여기서는 가벼운 쿼리를 날립니다.
+    // 미들웨어에서 DB 조회는 비용이 들지만, 보안을 위해 필수적임.
     const { data: profile } = await supabase
       .from('profiles')
       .select('couple_id')
@@ -63,12 +62,17 @@ export async function updateSession(request: NextRequest) {
 
     const isConnected = !!profile?.couple_id;
 
-    // 연결 안 됨 -> /connect 페이지로 강제 이동 (단, 이미 거기 있으면 통과)
-    if (!isConnected && !isConnectPage) {
+    // A. 연결 안 됨 -> /connect 페이지로만 접근 허용
+    if (!isConnected) {
+      // 이미 /connect 페이지에 있다면 통과
+      if (isConnectPage) {
+        return response;
+      }
+      // 다른 페이지(홈 등)로 가려하면 /connect로 납치
       return NextResponse.redirect(new URL('/connect', request.url));
     }
 
-    // 연결 됨 -> /connect 페이지 접근 차단 (홈으로)
+    // B. 연결 됨 -> /connect 페이지 접근 차단 (이미 커플이니까)
     if (isConnected && isConnectPage) {
       return NextResponse.redirect(new URL('/', request.url));
     }

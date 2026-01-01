@@ -13,13 +13,19 @@ export default function ConnectPage() {
   const [mode, setMode] = useState<'invite' | 'join'>('invite');
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [inputCode, setInputCode] = useState('');
+  const [notionKey, setNotionKey] = useState('');
+  const [notionDbId, setNotionDbId] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleCreateCode = async () => {
     if (!user) return;
+    if (!notionKey || !notionDbId) {
+      alert('Notion 정보를 모두 입력해주세요.');
+      return;
+    }
     setLoading(true);
     try {
-      const data = await createInvitation(user.id);
+      const data = await createInvitation(user.id, notionKey, notionDbId);
       setInviteCode(data.code);
     } catch (e) {
       alert('코드 생성 실패');
@@ -81,18 +87,41 @@ export default function ConnectPage() {
               exit={{ opacity: 0, x: 20 }}
               className="bg-white rounded-3xl p-8 shadow-lg text-center border border-border"
             >
-              <p className="text-sm text-secondary mb-6">아래 버튼을 눌러 코드를 생성하고<br/>상대방에게 공유하세요.</p>
-              
               {!inviteCode ? (
-                <button 
-                  onClick={handleCreateCode}
-                  disabled={loading}
-                  className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-black/90 transition-colors flex justify-center"
-                >
-                  {loading ? <Loader2 className="animate-spin" /> : '초대 코드 생성'}
-                </button>
+                <>
+                  <p className="text-sm text-secondary mb-4">
+                    커플 다이어리를 위해<br/>
+                    <span className="font-bold text-primary">Notion 정보</span>를 입력해주세요.
+                  </p>
+                  
+                  <div className="flex flex-col gap-3 mb-6">
+                    <input 
+                      type="text" 
+                      placeholder="Notion API Key (secret_...)"
+                      value={notionKey}
+                      onChange={(e) => setNotionKey(e.target.value)}
+                      className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-sm outline-none focus:border-primary transition-colors text-primary"
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Database ID"
+                      value={notionDbId}
+                      onChange={(e) => setNotionDbId(e.target.value)}
+                      className="w-full px-4 py-3 bg-surface border border-border rounded-xl text-sm outline-none focus:border-primary transition-colors text-primary"
+                    />
+                  </div>
+
+                  <button 
+                    onClick={handleCreateCode}
+                    disabled={loading || !notionKey || !notionDbId}
+                    className="w-full bg-primary text-white py-4 rounded-xl font-bold shadow-lg hover:bg-black/90 transition-colors flex justify-center disabled:opacity-50"
+                  >
+                    {loading ? <Loader2 className="animate-spin" /> : '설정 저장 및 코드 생성'}
+                  </button>
+                </>
               ) : (
                 <div className="flex flex-col gap-4">
+                  <p className="text-sm text-secondary mb-2">상대방에게 이 코드를 알려주세요.</p>
                   <div className="text-4xl font-black text-primary tracking-widest bg-surface py-6 rounded-2xl border border-border border-dashed">
                     {inviteCode}
                   </div>
