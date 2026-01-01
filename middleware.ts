@@ -29,14 +29,16 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
+          
           response = NextResponse.next({
             request,
           });
+          
           // response 객체가 새로 만들어졌으므로 헤더 다시 설정
           response.headers.set('x-device-type', viewport);
           
-          cookiesToSet.forEach(({ name, value, options })
-            => response.cookies.set(name, value, options)
+          cookiesToSet.forEach(({ name, value, options }) => 
+            response.cookies.set(name, value, options)
           );
         },
       },
