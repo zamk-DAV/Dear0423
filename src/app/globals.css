@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary-color);
+  --color-secondary: var(--text-secondary);
+  --color-accent: var(--accent-color);
+  --color-background: var(--bg-color);
+  --color-surface: var(--bg-secondary);
+  --color-border: var(--border-color);
+}
+
+/* 
+  Dear App Modern Theme System
+*/
+@layer base {
+  :root {
+    /* 기본 테마: 미니멀 (Black & White) */
+    --primary-color: #000000;
+    --text-primary: #000000;
+    --text-secondary: #666666;
+    --bg-color: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --border-color: #e5e5e5;
+    --accent-color: #7a7a7a;
+  }
+
+  /* 12가지 테마 데이터 */
+  [data-theme="apple"] {
+    --primary-color: #8B3A4A; --text-primary: #6B2838; --text-secondary: #A05868;
+    --bg-color: #F7E6CD; --bg-secondary: #EDD6BD; --border-color: #E7AC98;
+  }
+  [data-theme="forest"] {
+    --primary-color: #5A6B51; --text-primary: #3E4D37; --text-secondary: #6B7C62;
+    --bg-color: #fefefe; --bg-secondary: #f5f5f5; --border-color: #DCCBC5;
+  }
+  [data-theme="clay"] {
+    --primary-color: #6E6062; --text-primary: #4E4042; --text-secondary: #8E8082;
+    --bg-color: #fefefe; --bg-secondary: #f5f5f5; --border-color: #DCC2C1;
+  }
+  [data-theme="cat"] {
+    --primary-color: #8B7875; --text-primary: #5B4845; --text-secondary: #AB9895;
+    --bg-color: #fefefe; --bg-secondary: #f5f5f5; --border-color: #F1D5C8;
+  }
+  [data-theme="morning"] {
+    --primary-color: #AA7B65; --text-primary: #7A5B45; --text-secondary: #BA8B75;
+    --bg-color: #FFFCF6; --bg-secondary: #F5ECE6; --border-color: #E7E4DF;
+  }
+  [data-theme="pastel"] {
+    --primary-color: #8A92A0; --text-primary: #5A6270; --text-secondary: #AAB2C0;
+    --bg-color: #FEFCF8; --bg-secondary: #F4ECE8; --border-color: #E6DFDB;
+  }
+  [data-theme="purple"] {
+    --primary-color: #3C4362; --text-primary: #2C3352; --text-secondary: #5C5E7D;
+    --bg-color: #FFFDF6; --bg-secondary: #F5EDE6; --border-color: #E2D4E0;
+  }
+  [data-theme="dark"] {
+    --primary-color: #BB86FC; --text-primary: #E1E1E1; --text-secondary: #9E9E9E;
+    --bg-color: #121212; --bg-secondary: #1e1e1e; --border-color: #2C2C2C;
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
