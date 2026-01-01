@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase'; // 주의: 여기선 service_role 키를 쓰는 admin 클라이언트가 필요할 수 있음
+import { createClient } from '@supabase/supabase-js';
 
 export async function GET() {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     // 3일(72시간) 이전 메시지 삭제
     const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
     
-    // RLS 우회를 위해 Service Role 키 필요하지만, 
-    // 여기서는 일단 public access로 가정하거나 추후 admin 클라이언트 도입
     const { error, count } = await supabase
       .from('messages')
       .delete({ count: 'exact' })
